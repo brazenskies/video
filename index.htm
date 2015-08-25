@@ -1,0 +1,90 @@
+<html>
+    <head>
+        <script>
+            (function () {
+                var xvid,
+                    constr = {};
+
+                constr.prototype = Object.create(HTMLVideoElement.prototype);
+
+                Object.defineProperties(constr.prototype, {
+                    size: {
+                        value: 'small'
+                    },
+                    createdCallback: {
+                        value () {
+                            var root = this.createShadowRoot(),
+                                mp4 = this.getAttribute("mp4"),
+                                ogg = this.getAttribute("ogg"),
+                                noSupport = this.getAttribute("nosupport"),
+                                tmpl = document.querySelector("template"),
+                                video, el;
+
+                            root.appendChild(document.importNode(tmpl.content, true));
+
+                            video = root.querySelector("video");
+                            el = document.createElement("source");
+                            el.setAttribute('src', mp4);
+                            video.appendChild(el);
+
+                            this.video = video;
+
+                            //Add some event listeners
+                            root.querySelector('.play').addEventListener('click', this.playVid.bind(this));
+                            root.querySelector('.changeSize').addEventListener('click', this.toggleSize.bind(this));
+                            
+                        }
+                    },
+                    attachedCallback: {
+                        value () {
+                        }
+                    },
+                    set: {
+                        value (attribute, value) {
+                            this.setAttribute(attribute, value);
+                        }
+                    },
+                    get: {
+                        value (attribute) {
+                            return this.getAttribute(attribute);   
+                        }
+                    },
+                    playVid: {
+                        value () {
+                            if (this.video.paused) {
+                                this.video.play();
+                            } else {
+                                this.video.pause();   
+                            }
+                        }
+                    },
+                    toggleSize: {
+                        value () {
+                            if (this.size === 'small') {
+                                this.set('width', 800);
+                            } else {
+                                this.set('width', 300);   
+                            }
+                        }
+                    }
+                });
+
+                document.registerElement('x-vid', constr);
+            }());
+        </script>
+    </head>
+    
+    <body>
+        <template>
+            <video></video>
+            <div class="controls">
+                <button class="play">Play</button>
+                <button class="changeSize">Toggle Video Size</button>
+            </div>
+        </template>
+
+        <x-vid 
+            mp4="mov_bbb.mp4"
+            nosupport="Sorry, your browser doesn't support your video files"></x-vid>
+    </body>
+</html>
