@@ -54,10 +54,24 @@
                             btnVol1.addEventListener('click', this.setVolume.bind(this, 'vol1'));
                             btnVol2.addEventListener('click', this.setVolume.bind(this, 'vol2'));
                             btnVol3.addEventListener('click', this.setVolume.bind(this, 'vol3'));
-                            scrubber.addEventListener('change', this.setCurrentTime.bind(this, scrubber));
+
                             video.addEventListener('timeupdate', this.setTimeCounter.bind(this));
                             video.addEventListener('ended', this.resetControls.bind(this));
                             video.addEventListener('dblclick', this.playVid.bind(this));
+                            this.addEventListener('mouseover', function (){
+                                controls.classList.remove('hidden');
+                            })
+                            this.addEventListener('mouseout', function (){
+                                controls.classList.add('hidden');
+                            })
+
+                            scrubber.addEventListener('change', this.setCurrentTime.bind(this, scrubber));
+                            scrubber.addEventListener("mousedown", function() {
+                                video.pause();
+                            });
+                            scrubber.addEventListener("mouseup", function() {
+                                video.play();
+                            });
 
                             //Set some global props so we can refer to them throughout the component
                             this.video = video;
@@ -169,6 +183,9 @@
     <body>
         <template>
             <style>
+                :host {
+                    display: inline-block;
+                }
                 .xVideo {
                     width: 900px;
                     display: block;
@@ -180,10 +197,17 @@
                 video {
                     width: 100%;   
                 }
+                
                 .controls {
+                    opacity: 1;
+                    position: absolute;
                     display:block;
+                    right: 0px;
+                    left: 0px;
                     padding: 15px;
                     background: #333333;
+                    z-index: 1;
+                    transition: opacity 0.5s;
                 }
                 button {
                     background: none;
@@ -206,8 +230,8 @@
                     color: #ffffff;
                     font-family: sans-serif;
                     float: left;
-                    line-height: 16px;
-                    height: 16px;
+                    line-height: 14px;
+                    height: 14px;
                 }
                 .play {
                     margin-right: 10px;
@@ -232,6 +256,9 @@
                 input[type="range"] {
                     width: 500px;
                     margin-left: 25px;
+                }
+                .hidden {
+                    opacity: 0;
                 }
             </style>
             <div class="xVideo">
