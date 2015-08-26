@@ -22,19 +22,20 @@
                                 ogg = this.getAttribute("ogg"),
                                 noSupport = this.getAttribute("nosupport"),
                                 tmpl = document.querySelector("template"),
-                                video, el, btnPlay, btnToggleSize, btnMute, btnVolUp,
-                                btnVolDown, container, vidStart, vidEnd, timePlayed;
+                                video, el, btnPlay, btnToggleSize, btnMute, btnVol1, btnVol2,
+                                btnVol3, container, vidStart, vidEnd, timePlayed;
 
                             //Append the template into the root node
                             root.appendChild(document.importNode(tmpl.content, true));
-                            
+
                             //Cache a reference to all the custom video controls
                             container = root.querySelector('.xVideo');
                             btnPlay = root.querySelector('.play');
                             btnToggleSize = root.querySelector('.toggleSize');
                             btnMute = root.querySelector('.mute');
-                            btnVolUp = root.querySelector('.volUp');
-                            btnVolDown = root.querySelector('.volDown');
+                            btnVol1 = root.querySelector('.vol1');
+                            btnVol2 = root.querySelector('.vol2');
+                            btnVol3 = root.querySelector('.vol3');
                             timePlayed = root.querySelector('.time');
 
                             //Build the video
@@ -43,20 +44,25 @@
                             el.setAttribute('src', mp4);
                             video.appendChild(el);
 
-                            //Set this.video so we can refer to it throughout the component
-                            this.video = video;
-                            this.container = container;
-                            this.t = null;
-                            this.time = timePlayed;
-                            
-                            //Setup the video scrubbing bar TODO
-
                             //Add some event listeners to handle the custom control events
                             btnPlay.addEventListener('click', this.playVid.bind(this));
                             btnToggleSize.addEventListener('click', this.toggleSize.bind(this)); 
                             btnMute.addEventListener('click', this.setVolume.bind(this, 'mute'));
-                            btnVolUp.addEventListener('click', this.setVolume.bind(this, 'volumeUp'));
-                            btnVolDown.addEventListener('click', this.setVolume.bind(this, 'volumeDown'));
+                            btnVol1.addEventListener('click', this.setVolume.bind(this, 'vol1'));
+                            btnVol2.addEventListener('click', this.setVolume.bind(this, 'vol2'));
+                            btnVol3.addEventListener('click', this.setVolume.bind(this, 'vol3'));
+                            video.addEventListener('timeupdate', this.setTimeCounter.bind(this));
+                            video.addEventListener('ended', this.resetControls.bind(this))
+
+                            //Set some global props so we can refer to them throughout the component
+                            this.video = video;
+                            this.container = container;
+                            this.time = timePlayed;
+                            this.btnPlay = btnPlay;
+                            this.btnMute = btnMute;
+                            this.btnVol1 = btnVol1;
+                            this.btnVol2 = btnVol2;
+                            this.btnVol3 = btnVol3;                            
                         }
                     },
                     attachedCallback: {
@@ -77,11 +83,16 @@
                         value () {
                             if (this.video.paused) {
                                 this.video.play();
-                                this.setDuration();
+                                this.btnPlay.src = 'images/icoPause.png';
                             } else {
                                 this.video.pause();
-                                this.clearDuration();
+                                this.btnPlay.src = 'images/icoPlay.png';
                             }
+                        }
+                    },
+                    resetControls: {
+                        value () {
+                            this.btnPlay.src = 'images/icoPlay.png';
                         }
                     },
                     toggleSize: {
@@ -91,49 +102,50 @@
                             } else {
                                 this.container.classList.remove("vidSmall");
                             }
-
                             this.defaultSize = !this.defaultSize;
+                        }
+                    },
+                    setTimeCounter: {
+                        value () {
+                            var time = parseInt(this.video.currentTime),
+                                minutes = Math.floor(time / 60),
+                                seconds = time - minutes * 60;
+                            
+                            if (seconds < 10) {
+                                seconds = "0"+seconds;
+                            }
+                            if (this.video.currentTime > 1) {
+                                this.time.innerHTML = minutes + ":" + seconds;
+                            }
                         }
                     },
                     setVolume: {
                         value (event) {
-                            var vol = this.video.volume;
-
+                            var volume = this.video.volume
                             switch (event) {
                                 case 'mute':
-                                    this.video.volume = 0;
-                                    break;
-                                case 'volumeUp':
-                                    if (this.video.volume !== 1) {
-                                        vol = this.video.volume + 0.2;
+                                    if (volume === 1) {
+                                        this.btnMute.src = 'images/icoUnmute.png';
+                                        volume = 0;
+                                    } else {
+                                        this.btnMute.src = 'images/icoMute.png';
+                                        volume = 1;
                                     }
-                                    this.video.volume = vol.toFixed(2);
                                     break;
-                                case 'volumeDown':
-                                    if (this.video.volume !== 0) {
-                                        vol = this.video.volume - 0.2;
-                                    }
-                                    this.video.volume = vol.toFixed(2);
+                                case 'vol1':
+                                       volume = 0.3;
+                                    break;
+                                case 'vol2':
+                                        volume = 0.6;
+                                    break;
+                                case 'vol3':
+                                        volume = 1;
                                     break;
                             }
-                        }
-                    },
-                    setDuration: {
-                        value () {
-                             this.t = setInterval(function () {
-                                this.time.innerHTML = parseInt(this.video.currentTime);
-                             }.bind(this), 1000);  
-                        }
-                    },
-                    clearDuration: {
-                        value () {
-                             if (this.t) {
-                                clearInterval(this.t);
-                             }
+                            this.video.volume = volume;
                         }
                     }
                 });
-
                 document.registerElement('x-vid', constr);
             }());
         </script>
@@ -156,7 +168,7 @@
                 .controls {
                     display:block;
                     padding: 15px;
-                    background: #ff9900;
+                    background: #333333;
                 }
                 button {
                     background: none;
@@ -167,25 +179,57 @@
                     line-height: auto;
                     margin-right: 15px;
                     font-size: 16px;
+                    color: #FF9900;
+                }
+                .vol {
+                    cursor: pointer;
+                    margin-right: 1px;
                 }
                 .duration {
-                    font-size: 11px;
+                    position: relative;
+                    font-size: 12px;
                     color: #ffffff;
-                    float:right;
                     font-family: sans-serif;
+                    float: left;
+                    line-height: 16px;
+                    height: 16px;
+                }
+                .play {
+                    margin-right: 10px;
+                    float: left;
+                }
+                .playControls {
+                    float: left;
+                    margin-top: 4px;
+                }
+                .volumeControls {
+                    float: right;   
+                }
+                .mute {
+                    margin-left: 10px;   
+                }
+                .clearfix {
+                    clear: both;   
+                }
+                .toggleSize {
+                    display: none;
                 }
             </style>
             <div class="xVideo">
                 <div class="controls">
-                    <button class="play">Play</button>
-                    <button class="toggleSize">Toggle Video Size</button>
-                    <button class="mute">Mute</button>
-                    <button class="volDown">Volume down</button>
-                    <button class="volUp">Volume Up</button>
-                    <div class="duration">
-                        <span>Played:</span>
-                        <span class="time">0</span>
+                    
+                    <div class="playControls">
+                        <img src="images/icoPlay.png" class="play" />
+                        <div class="duration">
+                            <span class="time">0:00</span>
+                        </div>
                     </div>
+                    <div class="volumeControls">
+                        <img src="images/vol1-active.png" class="vol vol1" /><img src="images/vol2.png" class="vol vol2" /><img src="images/vol3.png" class="vol vol3" />
+                        <img src="images/icoMute.png" class="mute" />
+                    </div>
+                    <div class="clearfix"></div>
+                    <button class="toggleSize">Toggle Video Size</button>
                 </div>
                 <video></video>
             </div>
