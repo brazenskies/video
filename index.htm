@@ -204,10 +204,10 @@
                     display:block;
                     right: 0px;
                     left: 0px;
-                    padding: 15px;
                     background: #333333;
                     z-index: 1;
                     transition: opacity 0.5s;
+                    height: 50px
                 }
                 button {
                     background: none;
@@ -238,24 +238,36 @@
                     float: left;
                 }
                 .playControls {
-                    float: left;
-                    margin-top: 4px;
+                    position:absolute;
+                    left:20px;
+                    top: 18px;
                 }
                 .volumeControls {
-                    float: right;   
+                   position: absolute;
+                    right: 20px;
+                    top: 15px;
                 }
                 .mute {
-                    margin-left: 10px;   
+                    margin-left: 10px;
                 }
                 .clearfix {
-                    clear: both;   
+                    clear: both;
                 }
                 .toggleSize {
-                    display: none;
+                    position: absolute;
+                    bottom: 0px;
+                    z-index:2;
                 }
-                input[type="range"] {
-                    width: 500px;
-                    margin-left: 25px;
+                .scrubContainer {
+                    position: absolute;
+                    display:block;
+                    left: 80px;
+                    right: 210px;
+                    top: 15px;
+                }
+                .scrubber {
+                    display: block;
+                    width: 100%;
                 }
                 .hidden {
                     opacity: 0;
@@ -267,16 +279,17 @@
                         <img src="images/icoPlay.png" class="play" />
                         <div class="duration">
                             <span class="time">0:00</span>
-                            <input type="range" class="scrubber" value="0">
                         </div>
+                    </div>
+                    <div class="scrubContainer">
+                        <input type="range" class="scrubber" value="0" />
                     </div>
                     <div class="volumeControls">
                         <img src="images/vol1-active.png" class="vol vol1" /><img src="images/vol2.png" class="vol vol2" /><img src="images/vol3.png" class="vol vol3" />
                         <img src="images/icoMute.png" class="mute" />
                     </div>
-                    <div class="clearfix"></div>
-                    <button class="toggleSize">Toggle Video Size</button>
                 </div>
+                <button class="toggleSize">Toggle Video Size</button>
                 <video></video>
             </div>
         </template>
