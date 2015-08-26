@@ -23,7 +23,8 @@
                                 noSupport = this.getAttribute("nosupport"),
                                 tmpl = document.querySelector("template"),
                                 video, el, btnPlay, btnToggleSize, btnMute, btnVol1, btnVol2,
-                                btnVol3, container, vidStart, vidEnd, timePlayed;
+                                btnVol3, container, vidStart, vidEnd, timePlayed, controls,
+                                scrubber;
 
                             //Append the template into the root node
                             root.appendChild(document.importNode(tmpl.content, true));
@@ -37,6 +38,8 @@
                             btnVol2 = root.querySelector('.vol2');
                             btnVol3 = root.querySelector('.vol3');
                             timePlayed = root.querySelector('.time');
+                            controls = root.querySelector('.controls');
+                            scrubber = root.querySelector('.scrubber');
 
                             //Build the video
                             video = root.querySelector("video");
@@ -51,8 +54,10 @@
                             btnVol1.addEventListener('click', this.setVolume.bind(this, 'vol1'));
                             btnVol2.addEventListener('click', this.setVolume.bind(this, 'vol2'));
                             btnVol3.addEventListener('click', this.setVolume.bind(this, 'vol3'));
+                            scrubber.addEventListener('change', this.setCurrentTime.bind(this, scrubber));
                             video.addEventListener('timeupdate', this.setTimeCounter.bind(this));
-                            video.addEventListener('ended', this.resetControls.bind(this))
+                            video.addEventListener('ended', this.resetControls.bind(this));
+                            video.addEventListener('dblclick', this.playVid.bind(this));
 
                             //Set some global props so we can refer to them throughout the component
                             this.video = video;
@@ -62,7 +67,8 @@
                             this.btnMute = btnMute;
                             this.btnVol1 = btnVol1;
                             this.btnVol2 = btnVol2;
-                            this.btnVol3 = btnVol3;                            
+                            this.btnVol3 = btnVol3;
+                            this.scrubber = scrubber;
                         }
                     },
                     attachedCallback: {
@@ -105,18 +111,27 @@
                             this.defaultSize = !this.defaultSize;
                         }
                     },
+                    setCurrentTime: {
+                        value (scrubber) {
+                            var time = this.video.duration * (scrubber.value / 100);
+                            this.video.currentTime = time;
+                        }
+                    },
                     setTimeCounter: {
                         value () {
                             var time = parseInt(this.video.currentTime),
                                 minutes = Math.floor(time / 60),
-                                seconds = time - minutes * 60;
-                            
+                                seconds = time - minutes * 60,
+                                scrubValue = (100 / this.video.duration) * this.video.currentTime;
+
                             if (seconds < 10) {
                                 seconds = "0"+seconds;
                             }
                             if (this.video.currentTime > 1) {
                                 this.time.innerHTML = minutes + ":" + seconds;
                             }
+
+                            this.scrubber.value = scrubValue;
                         }
                     },
                     setVolume: {
@@ -214,14 +229,18 @@
                 .toggleSize {
                     display: none;
                 }
+                input[type="range"] {
+                    width: 500px;
+                    margin-left: 25px;
+                }
             </style>
             <div class="xVideo">
                 <div class="controls">
-                    
                     <div class="playControls">
                         <img src="images/icoPlay.png" class="play" />
                         <div class="duration">
                             <span class="time">0:00</span>
+                            <input type="range" class="scrubber" value="0">
                         </div>
                     </div>
                     <div class="volumeControls">
