@@ -8,8 +8,12 @@
                 constr.prototype = Object.create(HTMLVideoElement.prototype);
 
                 Object.defineProperties(constr.prototype, {
-                    size: {
-                        value: 'small'
+                    settings: {
+                        value: {}   
+                    },
+                    defaultSize: {
+                        value: true,
+                        writable: true
                     },
                     createdCallback: {
                         value () {
@@ -18,21 +22,41 @@
                                 ogg = this.getAttribute("ogg"),
                                 noSupport = this.getAttribute("nosupport"),
                                 tmpl = document.querySelector("template"),
-                                video, el;
+                                video, el, btnPlay, btnToggleSize, btnMute, btnVolUp,
+                                btnVolDown, container, vidStart, vidEnd, timePlayed;
 
+                            //Append the template into the root node
                             root.appendChild(document.importNode(tmpl.content, true));
+                            
+                            //Cache a reference to all the custom video controls
+                            container = root.querySelector('.xVideo');
+                            btnPlay = root.querySelector('.play');
+                            btnToggleSize = root.querySelector('.toggleSize');
+                            btnMute = root.querySelector('.mute');
+                            btnVolUp = root.querySelector('.volUp');
+                            btnVolDown = root.querySelector('.volDown');
+                            timePlayed = root.querySelector('.time');
 
+                            //Build the video
                             video = root.querySelector("video");
                             el = document.createElement("source");
                             el.setAttribute('src', mp4);
                             video.appendChild(el);
 
+                            //Set this.video so we can refer to it throughout the component
                             this.video = video;
-
-                            //Add some event listeners
-                            root.querySelector('.play').addEventListener('click', this.playVid.bind(this));
-                            root.querySelector('.changeSize').addEventListener('click', this.toggleSize.bind(this));
+                            this.container = container;
+                            this.t = null;
+                            this.time = timePlayed;
                             
+                            //Setup the video scrubbing bar TODO
+
+                            //Add some event listeners to handle the custom control events
+                            btnPlay.addEventListener('click', this.playVid.bind(this));
+                            btnToggleSize.addEventListener('click', this.toggleSize.bind(this)); 
+                            btnMute.addEventListener('click', this.setVolume.bind(this, 'mute'));
+                            btnVolUp.addEventListener('click', this.setVolume.bind(this, 'volumeUp'));
+                            btnVolDown.addEventListener('click', this.setVolume.bind(this, 'volumeDown'));
                         }
                     },
                     attachedCallback: {
@@ -53,18 +77,59 @@
                         value () {
                             if (this.video.paused) {
                                 this.video.play();
+                                this.setDuration();
                             } else {
-                                this.video.pause();   
+                                this.video.pause();
+                                this.clearDuration();
                             }
                         }
                     },
                     toggleSize: {
                         value () {
-                            if (this.size === 'small') {
-                                this.set('width', 800);
+                            if (this.defaultSize) {
+                                this.container.classList.add("vidSmall");
                             } else {
-                                this.set('width', 300);   
+                                this.container.classList.remove("vidSmall");
                             }
+
+                            this.defaultSize = !this.defaultSize;
+                        }
+                    },
+                    setVolume: {
+                        value (event) {
+                            var vol = this.video.volume;
+
+                            switch (event) {
+                                case 'mute':
+                                    this.video.volume = 0;
+                                    break;
+                                case 'volumeUp':
+                                    if (this.video.volume !== 1) {
+                                        vol = this.video.volume + 0.2;
+                                    }
+                                    this.video.volume = vol.toFixed(2);
+                                    break;
+                                case 'volumeDown':
+                                    if (this.video.volume !== 0) {
+                                        vol = this.video.volume - 0.2;
+                                    }
+                                    this.video.volume = vol.toFixed(2);
+                                    break;
+                            }
+                        }
+                    },
+                    setDuration: {
+                        value () {
+                             this.t = setInterval(function () {
+                                this.time.innerHTML = parseInt(this.video.currentTime);
+                             }.bind(this), 1000);  
+                        }
+                    },
+                    clearDuration: {
+                        value () {
+                             if (this.t) {
+                                clearInterval(this.t);
+                             }
                         }
                     }
                 });
@@ -76,13 +141,55 @@
     
     <body>
         <template>
-            <video></video>
-            <div class="controls">
-                <button class="play">Play</button>
-                <button class="changeSize">Toggle Video Size</button>
+            <style>
+                .xVideo {
+                    width: 900px;
+                    display: block;
+                    position: relative;
+                }
+                .vidSmall {
+                    width: 600px !important;   
+                }
+                video {
+                    width: 100%;   
+                }
+                .controls {
+                    display:block;
+                    padding: 15px;
+                    background: #ff9900;
+                }
+                button {
+                    background: none;
+                    border: none;
+                    color: #ffffff;
+                    outline: none;
+                    padding: 0;
+                    line-height: auto;
+                    margin-right: 15px;
+                    font-size: 16px;
+                }
+                .duration {
+                    font-size: 11px;
+                    color: #ffffff;
+                    float:right;
+                    font-family: sans-serif;
+                }
+            </style>
+            <div class="xVideo">
+                <div class="controls">
+                    <button class="play">Play</button>
+                    <button class="toggleSize">Toggle Video Size</button>
+                    <button class="mute">Mute</button>
+                    <button class="volDown">Volume down</button>
+                    <button class="volUp">Volume Up</button>
+                    <div class="duration">
+                        <span>Played:</span>
+                        <span class="time">0</span>
+                    </div>
+                </div>
+                <video></video>
             </div>
         </template>
-
         <x-vid 
             mp4="mov_bbb.mp4"
             nosupport="Sorry, your browser doesn't support your video files"></x-vid>
